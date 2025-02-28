@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Interfaces\CategoryInterface;
 use App\Enums\Category\CategoryFields;
-use App\Services\IblockSelectorService;
+use App\Config\ConfigLoader;
 
 class CategoryService implements CategoryInterface
 {
@@ -13,8 +13,8 @@ class CategoryService implements CategoryInterface
 
     public function __construct()
     {
-        $iblockSelector = new IblockSelectorService();
-        $this->selectedIblockId = $iblockSelector();
+        $configLoader = new ConfigLoader();
+        $this->selectedIblockId =  $configLoader->get('catalog_id', 0);
 
         $this->fieldsSelect = [
             CategoryFields::NAME->value,
@@ -22,7 +22,7 @@ class CategoryService implements CategoryInterface
             CategoryFields::PICTURE->value,
             CategoryFields::DESCRIPTION->value,
             CategoryFields::DETAIL_PICTURE->value,
-            CategoryFields::ID->value,
+            CategoryFields::ID->value
         ];
     }
 
@@ -74,7 +74,7 @@ class CategoryService implements CategoryInterface
             "ID"          => $arCategory['ID'],
             "NAME"        => $arCategory['NAME'],
             "CODE"        => $arCategory['CODE'],
-            "PICTURE"     => \CFile::GetPath($arCategory['PICTURE']),
+            "PICTURE"     => \CFile::GetPath($arCategory[CategoryFields::PICTURE->value]),
             "DESCRIPTION" => $arCategory['DESCRIPTION'] ?? null, // Описание может отсутствовать
             "DETAIL_PICTURE" => \CFile::GetPath($arCategory['DETAIL_PICTURE'] ?? null),
         ];

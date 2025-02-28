@@ -6,7 +6,7 @@ enum CategoryFields: string
 {
     case NAME = 'NAME';
     case CODE = 'CODE';
-    case PICTURE = 'PICTURE';
+    case PICTURE = 'UF_IMG';
     case DESCRIPTION = 'DESCRIPTION';
     case DETAIL_PICTURE = 'DETAIL_PICTURE';
     case ID = 'ID';

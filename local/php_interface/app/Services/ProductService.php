@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Interfaces\ProductInterface;
 use App\Enums\Product\ProductFields;
-use App\Services\IblockSelectorService;
 use App\Config\ConfigLoader;
 
 class ProductService implements ProductInterface
@@ -15,8 +14,7 @@ class ProductService implements ProductInterface
     public function __construct()
     {
         $configLoader = new ConfigLoader();
-        $iblockSelector = new IblockSelectorService();
-        $this->selectedIblockId = $iblockSelector();
+        $this->selectedIblockId = $configLoader->get('catalog_id', 0);
         $this->defaultProperties = $configLoader->get('product_default_properties', []);
     }
 
