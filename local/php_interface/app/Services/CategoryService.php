@@ -72,7 +72,7 @@ class CategoryService implements CategoryInterface
     {
         return [
             "ID"          => $arCategory['ID'],
-            "NAME"        => $arCategory['NAME'],
+            "NAME"        => htmlspecialchars_decode($arCategory['NAME']),
             "CODE"        => $arCategory['CODE'],
             "PICTURE"     => \CFile::GetPath($arCategory[CategoryFields::PICTURE->value]),
             "DESCRIPTION" => $arCategory['DESCRIPTION'] ?? null, // Описание может отсутствовать

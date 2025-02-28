@@ -73,20 +73,24 @@ class CatalogService implements CatalogInterface
                 "IBLOCK_ID" => $this->selectedIblockIdOffer,
                 "ACTIVE"    => 'Y',
             ];
-            
-            foreach ($filters['properties'] as $propCode => $propValue) {
+
+            foreach ($filters['properties'] as $propValue) {
+                $propCode = key($propValue);
+
+                $propValue = $propValue[$propCode];
+                $propCode = str_replace('PROPERTY_', '', $propCode);
                 // Определяем, к какой сущности относится свойство (товар или торговое предложение)
                 $entityType = $this->getPropertyEntityType($propCode);
-                
+
                 if ($entityType === 'product') {
                     // Добавляем свойство в фильтр товаров
                     $arFilter['PROPERTY_' . $propCode] = $propValue;
                 } elseif ($entityType === 'offer') {
                     // Добавляем свойство в фильтр торговых предложений
-                    $offerFilter['PROPERTY_' . $propCode] = $propValue;
+                    $offerFilter['PROPERTY_' . $propCode . '_VALUE'] = $propValue;
                 }
             }
-            
+
             // Если есть фильтры по торговым предложениям, получаем ID товаров с подходящими предложениями
             if ($offerFilter && count($offerFilter) > 2) { // Если есть дополнительные условия кроме IBLOCK_ID и ACTIVE
                 $productIds = $this->getProductIdsWithMatchingOffers($offerFilter);
@@ -175,7 +179,7 @@ class CatalogService implements CatalogInterface
                 $propertyCode = $propertyData[1];
                 $filterType = $propertyData[0];
                 $entity = $propertyData[2];
-                
+
                 // Получаем доступные значения свойства с учетом текущих фильтров
                 $values = $this->getFilteredPropertyValues(
                     $propertyCode,
@@ -183,11 +187,11 @@ class CatalogService implements CatalogInterface
                     $filterType,
                     $entity
                 );
-                
+
                 // Добавляем информацию о типе сущности для фронтенда
                 $propertyValues[$propertyCode] = [
                     'values' => $values,
-                    'entity' => $entity
+                    'name' => $this->getPropertyName($propertyCode)
                 ];
             }
         }
@@ -213,36 +217,21 @@ class CatalogService implements CatalogInterface
      */
     private function getFilteredOfferPropertyValues(string $propertyCode, string $filterType, array $baseOfferFilter): array
     {
-        $values = [];
-
         // Создаем копию фильтра и добавляем условие на наличие значения свойства
         $offerFilter = $baseOfferFilter;
         $offerFilter['!' . $propertyCode] = false;
+        $offerFilter['AVAILABLE'] = 'Y';
 
         $dbRes = \CIBlockElement::GetList(
             [], // стандартная сортировка
             $offerFilter,
             false,
             false,
-            [$propertyCode]
+            [$propertyCode, 'NAME']
         );
 
-        while ($element = $dbRes->Fetch()) {
-            $fieldKey = $propertyCode . '_VALUE';
-            if (!empty($element[$fieldKey])) {
-                if ($filterType === 'link') {
-                    $values[] = $this->getLinkedElementName($element[$fieldKey]);
-                } elseif ($filterType === 'list') {
-                    $values[] = $this->getEnumValueName($propertyCode, $element[$fieldKey]);
-                } else {
-                    $values[] = $element[$fieldKey];
-                }
-            }
-        }
-
-        return array_unique($values);
+        return $this->extractUniquePropertyValues($dbRes, $propertyCode, $filterType);
     }
-
     /**
      * Универсальный метод получения значений фильтруемых свойств.
      * Делегирует вызов для товаров или торговых предложений.
@@ -262,14 +251,14 @@ class CatalogService implements CatalogInterface
                 "ACTIVE"    => 'Y',
                 // При необходимости можно добавить и другие условия.
             ];
-            
+
             // Если в текущем фильтре есть ID товаров, добавляем их в фильтр торговых предложений
             if (!empty($currentFilter['ID'])) {
                 // Получаем только торговые предложения для отфильтрованных товаров
                 $baseOfferFilter['PROPERTY_CML2_LINK'] = $currentFilter['ID'];
             } elseif (!empty($currentFilter['SECTION_ID'])) {
                 // Если задана категория, получаем ID товаров из этой категории
-                $productIds = $this->getProductIdsFromCategory($currentFilter['SECTION_ID'], $currentFilter['INCLUDE_SUBSECTIONS'] ?? 'N');
+                $productIds = $this->getProductIds($currentFilter);
                 if (!empty($productIds)) {
                     $baseOfferFilter['PROPERTY_CML2_LINK'] = $productIds;
                 }
@@ -281,6 +270,7 @@ class CatalogService implements CatalogInterface
         }
     }
 
+
     /**
      * Получает значения фильтруемого свойства для товаров.
      *
@@ -291,7 +281,6 @@ class CatalogService implements CatalogInterface
      */
     private function getFilteredProductPropertyValues(string $propertyCode, array $currentFilter, string $filterType): array
     {
-        $values = [];
         $filter = $currentFilter;
         $filter['IBLOCK_ID'] = $this->selectedIblockId;
         $filter['!' . $propertyCode . '_VALUE'] = false;
@@ -304,20 +293,7 @@ class CatalogService implements CatalogInterface
             [$propertyCode]
         );
 
-        while ($element = $dbRes->Fetch()) {
-            $fieldKey = $propertyCode . '_VALUE';
-            if (!empty($element[$fieldKey])) {
-                if ($filterType === 'link') {
-                    $values[] = $this->getLinkedElementName($element[$fieldKey]);
-                } elseif ($filterType === 'list') {
-                    $values[] = $this->getEnumValueName($propertyCode, $element[$fieldKey]);
-                } else {
-                    $values[] = $element[$fieldKey];
-                }
-            }
-        }
-
-        return array_unique($values);
+        return $this->extractUniquePropertyValues($dbRes, $propertyCode, $filterType);
     }
 
     /**
@@ -379,7 +355,7 @@ class CatalogService implements CatalogInterface
                 }
             }
         }
-        
+
         // По умолчанию считаем, что свойство относится к товару
         return 'product';
     }
@@ -393,7 +369,7 @@ class CatalogService implements CatalogInterface
     private function getProductIdsWithMatchingOffers(array $offerFilter): array
     {
         $productIds = [];
-        
+
         // Получаем все торговые предложения, соответствующие фильтру
         $dbRes = \CIBlockElement::GetList(
             [],
@@ -402,36 +378,27 @@ class CatalogService implements CatalogInterface
             false,
             ['ID', 'PROPERTY_CML2_LINK']
         );
-        
+
         while ($offer = $dbRes->Fetch()) {
             if (!empty($offer['PROPERTY_CML2_LINK_VALUE'])) {
                 $productIds[] = $offer['PROPERTY_CML2_LINK_VALUE'];
             }
         }
-        
+
         return array_unique($productIds);
     }
 
     /**
      * Получает ID товаров из категории.
      *
-     * @param int $categoryId ID категории
+     * @param array $filter фильтрация
      * @param string $includeSubcategories Флаг включения подкатегорий
      * @return array Массив ID товаров
      */
-    private function getProductIdsFromCategory(int $categoryId, string $includeSubcategories): array
+    private function getProductIds(array $filter): array
     {
         $productIds = [];
-        $filter = [
-            "IBLOCK_ID" => $this->selectedIblockId,
-            "SECTION_ID" => $categoryId,
-            "ACTIVE" => 'Y',
-        ];
-        
-        if ($includeSubcategories === 'Y') {
-            $filter["INCLUDE_SUBSECTIONS"] = 'Y';
-        }
-        
+
         $res = \CIBlockElement::GetList(
             [],
             $filter,
@@ -445,5 +412,66 @@ class CatalogService implements CatalogInterface
         }
 
         return array_unique($productIds);
+    }
+
+    private function getPropertyName(string $propertyCode): string
+    {
+        $propCode = str_replace('PROPERTY_', '', $propertyCode);
+
+        // Определяем, к какой сущности относится свойство
+        $entityType = $this->getPropertyEntityType($propCode);
+        $iblockId = $entityType === 'product' ? $this->selectedIblockId : $this->selectedIblockIdOffer;
+
+        // Получаем информацию о свойстве
+        $property = \CIBlockProperty::GetList(
+            [],
+            ['IBLOCK_ID' => $iblockId, 'CODE' => $propCode]
+        )->Fetch();
+
+        return $property ? $property['NAME'] : $propCode;
+    }
+
+    /**
+     * Извлекает уникальные значения свойств из результата запроса.
+     *
+     * @param \CDBResult $dbRes Результат запроса к базе данных
+     * @param string $propertyCode Код свойства
+     * @param string $filterType Тип свойства ("link" или "list")
+     * @return array Массив уникальных значений в формате [['key' => ..., 'name' => ...], ...]
+     */
+    private function extractUniquePropertyValues(\CDBResult $dbRes, string $propertyCode, string $filterType): array
+    {
+        $values = [];
+        $uniqueKeys = [];
+
+        while ($element = $dbRes->Fetch()) {
+            $fieldKey = $propertyCode . '_VALUE';
+            if (!empty($element[$fieldKey])) {
+                $name = $key = $element[$fieldKey];
+
+                if ($filterType === 'list')
+                    $key = $element[$propertyCode . '_ENUM_ID'];
+
+                // Пропускаем, если такой ключ уже обработан
+                if (isset($uniqueKeys[$key])) {
+                    continue;
+                }
+
+                if ($filterType === 'link') {
+                    $name = $this->getLinkedElementName($name);
+                } elseif ($filterType === 'list') {
+                    $name = $this->getEnumValueName($propertyCode, $name);
+                }
+
+                $values[] = [
+                    'key' => $key,
+                    'name' => $name
+                ];
+
+                $uniqueKeys[$key] = true;
+            }
+        }
+
+        return $values;
     }
 }

@@ -8,7 +8,7 @@ return [
         'product' => [['link', 'PROPERTY_BRAND', 'product']],
         'offers' => [
             ['list', 'PROPERTY_SOLES', 'product'],
-            ['list', 'PROPERTY_RAZMER', 'offer'],
+            ['string', 'PROPERTY_RAZMER', 'offer'],
             ['list', 'PROPERTY_COLOR_SL1', 'product'],
             ['list', 'PROPERTY_UPPERMATERIAL', 'product'],
             ['list', 'PROPERTY_BRYUKI_ZHENSKIE', 'offer'],
