@@ -52,4 +52,21 @@ class ProfileController
             'message' => $updateResult ? 'Профиль успешно обновлен' : 'Ошибка при обновлении профиля'
         ];
     }
+
+    /**
+     * Изменение пароля пользователя.
+     *
+     * @return array
+     */
+    public function changePassword(): array
+    {
+        $this->validator->validatePassword($_POST);
+
+        $changeResult = $this->profileService->changePassword($_POST, $this->userId);
+
+        return [
+            'success' => $changeResult,
+            'message' => $changeResult ? 'Пароль успешно изменен' : 'Ошибка при изменении пароля'
+        ];
+    }
 }

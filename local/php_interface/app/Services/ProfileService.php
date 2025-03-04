@@ -67,4 +67,23 @@ class ProfileService implements ProfileInterface
             'phone' => $userData[ProfileFields::PHONE->value],
         ];
     }
+
+    /**
+     * Изменение пароля пользователя.
+     *
+     * @param array $passwordData Данные для изменения пароля
+     * @param int $userId ID пользователя
+     * @return bool Результат изменения пароля
+     */
+    public function changePassword(array $passwordData, int $userId): bool
+    {
+        $user = new \CUser;
+
+        $fields = [
+            'PASSWORD' => $passwordData['password'],
+            'CONFIRM_PASSWORD' => $passwordData['password_confirmation']
+        ];
+
+        return $user->Update($userId, $fields);
+    }
 }

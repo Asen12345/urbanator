@@ -65,6 +65,7 @@ class ProductService implements ProductInterface
             'DETAIL_DESCRIPTION' => $product['DETAIL_TEXT'] ?? null,
             'MORE_PHOTO'         => $this->getMorePhoto($product['ID']),
             'TRADE_OFFERS'       => $tradeOffersData['OFFERS'],
+            'TRADE_OFFERS_OPTIONS' => $tradeOffersData['UNIQUE_PROPERTIES'],
         ];
     }
 
@@ -99,10 +100,29 @@ class ProductService implements ProductInterface
                     'PRICE'          => $price,
                     'QUANTITY'       => $offer['CATALOG_QUANTITY'],
                 ];
+
+                $rsOfferProps = \CIBlockElement::GetProperty(
+                    $offer['IBLOCK_ID'],
+                    $offer['ID'],
+                    [],
+                    []
+                );
+                while ($prop = $rsOfferProps->Fetch()) {
+                    if (empty($prop['VALUE_ENUM'])) {
+                        continue;
+                    }
+                    $propCode = $prop['CODE'];
+                    if (!isset($uniqueProps[$propCode])) {
+                        $uniqueProps[$propCode] = [];
+                    }
+                    if (!in_array($prop['VALUE_ENUM'], $uniqueProps[$propCode], true)) {
+                        $uniqueProps[$propCode][] = $prop['VALUE_ENUM'];
+                    }
+                }
             }
         }
 
-        return ['OFFERS' => $tradeOffers];
+        return ['OFFERS' => $tradeOffers, 'UNIQUE_PROPERTIES' => $uniqueProps];
     }
 
     /**
