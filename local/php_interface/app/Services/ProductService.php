@@ -116,7 +116,7 @@ class ProductService implements ProductInterface
                         $uniqueProps[$propCode] = [];
                     }
                     if (!in_array($prop['VALUE_ENUM'], $uniqueProps[$propCode], true)) {
-                        $uniqueProps[$propCode][] = $prop['VALUE_ENUM'];
+                        $uniqueProps[$propCode][] = [$offer['ID'] => $prop['VALUE_ENUM']];
                     }
                 }
             }

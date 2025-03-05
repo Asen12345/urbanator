@@ -5,23 +5,22 @@ namespace App\Controllers;
 use App\Middleware\AuthMiddleware;
 use App\Services\ProfileService;
 use App\Validators\ProfileValidator;
+use App\Interfaces\ProfileInterface;
 
-class ProfileController
+class ProfileController extends AbstractAuthenticatedController
 {
-    private ProfileService $profileService;
+    private ProfileInterface $profileService;
     private ProfileValidator $validator;
-    private int $userId;
 
     /**
      * Конструктор контроллера профиля.
      */
     public function __construct()
     {
-        $authMiddleware = new AuthMiddleware();
+        parent::__construct(new AuthMiddleware());
 
         $this->profileService = new ProfileService();
         $this->validator = new ProfileValidator();
-        $this->userId = $authMiddleware->handle();
     }
 
     /**
@@ -43,9 +42,10 @@ class ProfileController
      */
     public function updateProfile(): array
     {
-        $this->validator->validate($_POST);
+        $data = $this->getPostData();
+        $this->validate($data, $this->validator);
 
-        $updateResult = $this->profileService->updateProfile($_POST, $this->userId);
+        $updateResult = $this->profileService->updateProfile($data, $this->userId);
 
         return [
             'success' => $updateResult,
@@ -60,9 +60,10 @@ class ProfileController
      */
     public function changePassword(): array
     {
-        $this->validator->validatePassword($_POST);
+        $data = $this->getPostData();
+        $this->validator->validatePassword($data);
 
-        $changeResult = $this->profileService->changePassword($_POST, $this->userId);
+        $changeResult = $this->profileService->changePassword($data, $this->userId);
 
         return [
             'success' => $changeResult,

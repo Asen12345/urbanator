@@ -4,11 +4,12 @@ namespace App\Controllers;
 
 use App\Services\ProductService;
 use App\Validators\ProductValidator;
+use App\Interfaces\ProductInterface;
 
-class ProductController
+class ProductController extends AbstractController
 {
     protected ProductValidator $validator;
-    protected ProductService $productService;
+    protected ProductInterface $productService;
 
     public function __construct()
     {
@@ -18,9 +19,11 @@ class ProductController
 
     public function getDetail(): array
     {
-        $this->validator->validate($_GET);
+        $data = $this->getGetData();
 
-        $productId = (int)$_GET['id'];
+        $this->validate($data, $this->validator);
+
+        $productId = (int)$data['id'];
         $product = $this->productService->getProduct($productId);
 
         return $product;

@@ -5,14 +5,19 @@ namespace App\Controllers;
 use App\Services\FavoriteService;
 use App\Validators\FavoriteValidator;
 use App\Middleware\AuthMiddleware;
+use App\Interfaces\FavoriteInterface;
 
-class FavoriteController
+class FavoriteController extends AbstractAuthenticatedController
 {
     protected FavoriteValidator $validator;
+    protected FavoriteInterface $favoriteService;
 
     public function __construct()
     {
+        parent::__construct(new AuthMiddleware());
+
         $this->validator = new FavoriteValidator();
+        $this->favoriteService = new FavoriteService($this->userId);
     }
 
     /**
@@ -23,13 +28,11 @@ class FavoriteController
      */
     public function addFavorite(): array
     {
-        $data = $_POST;
+        $data = $this->getPostData();
         $this->validator->validateAdd($data);
 
-        $userId = (new AuthMiddleware())->handle();
-        $favoriteService = new FavoriteService($userId);
-        $favoriteService->addFavorite((int)$data['product_id']);
-        $favorites = $favoriteService->getFavorites();
+        $this->favoriteService->addFavorite((int)$data['product_id']);
+        $favorites = $this->favoriteService->getFavorites();
 
         return $favorites;
     }
@@ -42,13 +45,11 @@ class FavoriteController
      */
     public function removeFavorite(): array
     {
-        $data = $_POST;
+        $data = $this->getPostData();
         $this->validator->validateRemove($data);
 
-        $userId = (new AuthMiddleware())->handle();
-        $favoriteService = new FavoriteService($userId);
-        $favoriteService->removeFavorite((int)$data['product_id']);
-        $favorites = $favoriteService->getFavorites();
+        $this->favoriteService->removeFavorite((int)$data['product_id']);
+        $favorites = $this->favoriteService->getFavorites();
 
         return $favorites;
     }
@@ -61,12 +62,10 @@ class FavoriteController
     public function clearFavorites(): array
     {
         // При необходимости можно добавить дополнительную валидацию входящих данных
-        $data = $_POST;
+        $data = $this->getPostData();
         $this->validator->validateClear($data);
 
-        $userId = (new AuthMiddleware())->handle();
-        $favoriteService = new FavoriteService($userId);
-        $favoriteService->clearFavorites();
+        $this->favoriteService->clearFavorites();
 
         return ['message' => 'Избранное очищено'];
     }
@@ -78,9 +77,7 @@ class FavoriteController
      */
     public function getFavorites(): array
     {
-        $userId = (new AuthMiddleware())->handle();
-        $favoriteService = new FavoriteService($userId);
-        $favorites = $favoriteService->getFavorites();
+        $favorites = $this->favoriteService->getFavorites();
 
         return $favorites;
     }

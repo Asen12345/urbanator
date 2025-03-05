@@ -3,12 +3,13 @@
 namespace App\Controllers;
 
 use App\Validators\RegistrationValidator;
+use App\Interfaces\AuthInterface;
 use App\Validators\LoginValidator;
 use App\Services\AuthService;
 
-class AuthController
+class AuthController extends AbstractController
 {
-    protected AuthService $authService;
+    protected AuthInterface $authService;
 
     public function __construct()
     {
@@ -21,12 +22,11 @@ class AuthController
      */
     public function register(): array
     {
-        // Получаем входящие данные (например, из $_POST)
-        $data = $_POST;
+        $data = $this->getPostData();
 
         // Валидируем входные данные
         $validator = new RegistrationValidator();
-        $validator->validate($data);
+        $this->validate($data, $validator);
 
         $token = $this->authService->registerUser($data);
 
@@ -40,12 +40,11 @@ class AuthController
      */
     public function login(): array
     {
-        // Получаем входящие данные (например, из $_POST)
-        $data = $_POST;
+        $data = $this->getPostData();
 
         // Валидируем входные данные
         $validator = new LoginValidator();
-        $validator->validate($data);
+        $this->validate($data, $validator);
 
         $token = $this->authService->loginUser($data);
 

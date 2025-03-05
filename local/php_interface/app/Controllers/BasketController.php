@@ -6,25 +6,26 @@ use App\Services\BasketService;
 use App\Validators\BasketValidator;
 use App\Middleware\AuthMiddleware;
 use App\Enums\Basket\UpdateFields;
+use App\Interfaces\BasketInterface;
 
-class BasketController
+class BasketController extends AbstractAuthenticatedController
 {
     protected BasketValidator $validator;
 
     public function __construct()
     {
+        parent::__construct(new AuthMiddleware());
         $this->validator = new BasketValidator();
     }
 
     /**
      * Получает экземпляр сервиса корзины для авторизованного пользователя.
      *
-     * @return BasketService
+     * @return BasketInterface
      */
-    private function getBasketService(): BasketService
+    private function getBasketService(): BasketInterface
     {
-        $user = (new AuthMiddleware())->handle();
-        return new BasketService($user);
+        return new BasketService($this->userId);
     }
 
     /**
@@ -33,7 +34,7 @@ class BasketController
      */
     public function addItem(): array
     {
-        $data = $_POST;
+        $data = $this->getPostData();
         $this->validator->validateAdd($data);
 
         $tradeOfferId    = (int)$data['trade_offer_id'];
@@ -54,7 +55,7 @@ class BasketController
      */
     public function updateItem(): array
     {
-        $data = $_POST;
+        $data = $this->getPostData();
         $this->validator->validateUpdate($data);
 
         $tradeOfferId   = (int)$data['trade_offer_id'];
@@ -75,7 +76,7 @@ class BasketController
      */
     public function removeItem(): array
     {
-        $data = $_POST;
+        $data = $this->getPostData();
         $this->validator->validateRemove($data);
 
         $tradeOfferId   = (int)$data['trade_offer_id'];

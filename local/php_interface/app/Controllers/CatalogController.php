@@ -4,10 +4,11 @@ namespace App\Controllers;
 
 use App\Services\CatalogService;
 use App\Validators\CatalogValidator;
+use App\Interfaces\CatalogInterface;
 
-class CatalogController
+class CatalogController extends AbstractController
 {
-    protected CatalogService $catalogService;
+    protected CatalogInterface $catalogService;
     protected CatalogValidator $validator;
 
     public function __construct()
@@ -26,11 +27,12 @@ class CatalogController
      */
     public function getCatalog(): array
     {
-        // Получаем данные из GET (или другого источника)
-        $data = $_POST;
+        $filters = $this->getPostData();
 
-        // Валидируем входные параметры
-        $filters = $this->validator->validate($data);
+        $this->validate($filters, $this->validator);
+
+        $filters['page']  = isset($filters['page']) ? (int)$filters['page'] : 1;
+        $filters['limit'] = isset($filters['limit']) ? (int)$filters['limit'] : 10;
 
         $result = $this->catalogService->getCatalog($filters);
 

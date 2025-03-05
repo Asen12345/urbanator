@@ -188,6 +188,7 @@ class BasketService implements BasketInterface
             $remainQuantity = $catalogProduct ? $catalogProduct['QUANTITY'] : 0;
 
             $items[] = [
+                'id' => $tradeOfferId,
                 'quantity' => $basketItem->getQuantity(),
                 'title'    => $title,
                 'price'    => $price,

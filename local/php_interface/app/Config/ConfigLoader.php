@@ -2,13 +2,15 @@
 
 namespace App\Config;
 
-class ConfigLoader
+use App\Interfaces\ConfigInterface;
+
+class ConfigLoader implements ConfigInterface
 {
     private array $config;
 
-    public function __construct()
+    public function __construct(string $configPath = null)
     {
-        $this->config = include __DIR__ . '/config.php';
+        $this->config = include $configPath ?? __DIR__ . '/config.php';
     }
 
     public function get(string $key, $default = null)

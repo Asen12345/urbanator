@@ -19,9 +19,9 @@ class CatalogValidator
      * - in_stock (optional, boolean)
      *
      * @param array $data
-     * @return array Отфильтрованные и преобразованные данные
+     * @return bool 
      */
-    public function validate(array $data): array
+    public function validate(array $data): bool
     {
         $validator = new Validator();
 
@@ -41,10 +41,6 @@ class CatalogValidator
             throw new \Exception("Ошибки валидации: " . json_encode($errors->toArray()), 400);
         }
 
-        // Устанавливаем значения по умолчанию
-        $data['page']  = isset($data['page']) ? (int)$data['page'] : 1;
-        $data['limit'] = isset($data['limit']) ? (int)$data['limit'] : 10;
-
-        return $data;
+        return true;
     }
 }

@@ -4,10 +4,11 @@ namespace App\Controllers;
 
 use App\Services\FaqService;
 use App\Validators\FaqValidator;
+use App\Interfaces\FaqInterface;
 
-class FaqController
-{  
-    protected FaqService $faqService;
+class FaqController extends AbstractController
+{
+    protected FaqInterface $faqService;
     protected FaqValidator $validator;
 
     public function __construct()
@@ -26,14 +27,12 @@ class FaqController
      */
     public function getFaq(): array
     {
-        // Получаем данные из POST
-        $data = $_GET;
+        $data = $this->getGetData();
 
-        // Валидируем входные параметры
-        $validatedData = $this->validator->validate($data);
+        $this->validate($data, $this->validator);
 
         // Получаем список вопросов и ответов
-        $result = $this->faqService->getFaqItems($validatedData['iblock_id']);
+        $result = $this->faqService->getFaqItems($data['iblock_id']);
 
         return $result;
     }

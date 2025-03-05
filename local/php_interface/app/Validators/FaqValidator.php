@@ -12,9 +12,9 @@ class FaqValidator
      * - iblock_id (required, numeric, минимум 1)
      *
      * @param array $data
-     * @return array Отфильтрованные и преобразованные данные
+     * @return bool 
      */
-    public function validate(array $data): array
+    public function validate(array $data): bool
     {
         $validator = new Validator();
 
@@ -29,9 +29,6 @@ class FaqValidator
             throw new \Exception("Ошибки валидации: " . json_encode($errors->toArray()), 400);
         }
 
-        // Преобразуем iblock_id в целое число
-        $data['iblock_id'] = (int)$data['iblock_id'];
-
-        return $data;
+        return true;
     }
 }
