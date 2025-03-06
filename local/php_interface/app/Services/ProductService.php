@@ -57,6 +57,8 @@ class ProductService implements ProductInterface
         // Получаем торговые предложения и уникальные свойства из них.
         $tradeOffersData = $this->getTradeOffers($product['ID']);
 
+        $productPrice = self::getOfferPrice($product['ID']);
+
         return [
             'ID'                 => $product['ID'],
             'NAME'               => $product['NAME'],
@@ -64,6 +66,7 @@ class ProductService implements ProductInterface
             'PREVIEW_PICTURE'    => \CFile::GetPath($product['PREVIEW_PICTURE']),
             'DETAIL_DESCRIPTION' => $product['DETAIL_TEXT'] ?? null,
             'MORE_PHOTO'         => $this->getMorePhoto($product['ID']),
+            'PRICE'              => $productPrice,
             'TRADE_OFFERS'       => $tradeOffersData['OFFERS'],
             'TRADE_OFFERS_OPTIONS' => $tradeOffersData['UNIQUE_PROPERTIES'],
         ];

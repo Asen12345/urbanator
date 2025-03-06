@@ -19,9 +19,9 @@ abstract class AbstractController
      * 
      * @param array $data Данные для валидации
      * @param object $validator Валидатор
-     * @return array Валидированные данные
+     * @return bool
      */
-    protected function validate(array $data, $validator): array
+    protected function validate(array $data, $validator): bool
     {
         return $validator->validate($data);
     }
